@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages for You</title>
+  <style>
+    :root {
+      --bg-color: #e3f2fd;
+      --card-bg: #ffffff;
+      --primary-blue: #1976d2;
+      --accent-blue: #2196f3;
+      --dark-blue: #0d47a1;
+      --light-blue: #bbdefb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+      color: #0d47a1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background Floating Vector Elements */
+    .floating-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none !important;
+      z-index: 0;
+    }
+
+    .floating-item {
+      position: absolute;
+      animation: floatAround 7s infinite ease-in-out;
+      opacity: 0.85;
+      pointer-events: none !important;
+    }
+
+    .item1 { top: 8%; left: 8%; animation-delay: 0s; }
+    .item2 { top: 12%; right: 10%; animation-delay: 1.5s; }
+    .item3 { bottom: 12%; left: 12%; animation-delay: 3s; }
+    .item4 { bottom: 15%; right: 12%; animation-delay: 4.5s; }
+
+    @keyframes floatAround {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(8deg); }
+    }
+
+    /* Main Card Container */
+    .card {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 3px solid var(--accent-blue);
+      border-radius: 24px;
+      padding: 35px 30px;
+      width: 90%;
+      max-width: 480px;
+      text-align: center;
+      box-shadow: 0 12px 35px rgba(13, 71, 161, 0.2);
+      z-index: 10;
+      position: relative;
+    }
+
+    .header-visuals {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .lily-svg {
+      width: 65px;
+      height: 65px;
+    }
+
+    h1 {
+      color: var(--dark-blue);
+      font-size: 1.9rem;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    /* Typing Text Box */
+    .typing-container {
+      background-color: #f1f8fe;
+      border: 2px solid var(--light-blue);
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .typing-text {
+      font-size: 1.05rem;
+      color: #1565c0;
+      font-weight: 600;
+      border-right: 3px solid var(--primary-blue);
+      white-space: nowrap;
+      overflow: hidden;
+      animation: blinkCursor 0.75s step-end infinite;
+    }
+
+    @keyframes blinkCursor {
+      from, to { border-color: transparent }
+      50% { border-color: var(--primary-blue); }
+    }
+
+    /* Interactive Button */
+    .btn {
+      background: linear-gradient(135deg, #1e88e5, #1565c0);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(21, 101, 192, 0.4);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 20;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #1565c0, #0d47a1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(21, 101, 192, 0.5);
+    }
+
+    /* Modal / Pop-up Overlay */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(13, 71, 161, 0.45);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1000;
+    }
+
+    .popup-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .popup-card {
+      background: #ffffff;
+      border: 3px solid #64b5f6;
+      border-radius: 24px;
+      padding: 30px 25px;
+      max-width: 450px;
+      width: 88%;
+      max-height: 85vh;
+      overflow-y: auto;
+      text-align: center;
+      transform: scale(0.85);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      position: relative;
+      z-index: 1001;
+    }
+
+    .popup-overlay.active .popup-card {
+      transform: scale(1);
+    }
+
+    .popup-header {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .popup-title {
+      color: var(--dark-blue);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .popup-body {
+      font-size: 0.95rem;
+      color: #37474f;
+      line-height: 1.6;
+      text-align: left;
+      background-color: #f4f9ff;
+      padding: 18px;
+      border-radius: 12px;
+      border-left: 4px solid var(--primary-blue);
+      margin-bottom: 20px;
+    }
+
+    .quote-box {
+      font-style: italic;
+      color: #0d47a1;
+      background-color: #e3f2fd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border-left: 3px solid #2196f3;
+    }
+
+    .action-btn {
+      background-color: var(--primary-blue);
+      color: white;
+      border: none;
+      padding: 12px 26px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      position: relative;
+      z-index: 1002;
+    }
+
+    .action-btn:hover {
+      background-color: var(--dark-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reusable SVG for Lily Icon -->
+  <svg style="display: none;">
+    <g id="lily-icon">
+      <path d="M25,45 Q15,25 25,5 Q35,25 25,45 Z" fill="#ffffff" stroke="#1565c0" stroke-width="1.5"/>
+      <path d="M25,45 Q5,30 2,15 Q20,20 25,45 Z" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
+      <path d="M25,45 Q45,30 48,15 Q30,20 25,45 Z" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
+      <path d="M25,45 Q10,40 5,30 Q20,35 25,45 Z" fill="#bbdefb" stroke="#1565c0" stroke-width="1.5"/>
+      <path d="M25,45 Q40,40 45,30 Q30,35 25,45 Z" fill="#bbdefb" stroke="#1565c0" stroke-width="1.5"/>
+      <path d="M25,45 L25,18" stroke="#fbc02d" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="25" cy="16" r="2.5" fill="#fbc02d"/>
+      <path d="M25,45 L18,22" stroke="#fbc02d" stroke-width="1.5"/>
+      <circle cx="17" cy="21" r="2" fill="#fbc02d"/>
+      <path d="M25,45 L32,22" stroke="#fbc02d" stroke-width="1.5"/>
+      <circle cx="33" cy="21" r="2" fill="#fbc02d"/>
+    </g>
+  </svg>
+
+  <!-- Floating Background Icons -->
+  <div class="floating-container">
+    <div class="floating-item item1"><svg class="lily-svg"><use href="#lily-icon"/></svg></div>
+    <div class="floating-item item2"><svg class="lily-svg"><use href="#lily-icon"/></svg></div>
+    <div class="floating-item item3"><svg class="lily-svg"><use href="#lily-icon"/></svg></div>
+    <div class="floating-item item4"><svg class="lily-svg"><use href="#lily-icon"/></svg></div>
+  </div>
+
+  <!-- Main Card Container -->
+  <div class="card">
+    <div class="header-visuals">
+      <svg class="lily-svg"><use href="#lily-icon"/></svg>
+      <svg class="lily-svg"><use href="#lily-icon"/></svg>
+    </div>
+    <h1>Messages for You</h1>
+
+    <!-- Typing Message Box -->
+    <div class="typing-container">
+      <div id="typingText" class="typing-text"></div>
+    </div>
+
+    <button class="btn" id="startBtn">Click to Open Messages 💙</button>
+  </div>
+
+  <!-- Pop-up Modal 1: Taglish Comfort Message -->
+  <div class="popup-overlay" id="modal1">
+    <div class="popup-card">
+      <div class="popup-header">
+        <svg class="lily-svg"><use href="#lily-icon"/></svg>
+        <svg class="lily-svg"><use href="#lily-icon"/></svg>
+      </div>
+      <div class="popup-title">A Message for You 💙</div>
+      
+      <div class="popup-body">
+        <p>Hello hello, Kumusta?</p><br>
+        <p>
+          I don't want to interfere sa kung ano man ang pinagdadaanan mo right now, pero kanina ko pa kasi napapansin yung notes mo here sa IG. I just wanted to ask if okay ka lang? I really hope you're doing well and okay ka lang today.
+        </p><br>
+        <p>
+          I know hindi tayo masyadong magkakilala at IG moots lang tayo, pero gusto ko lang sabihin na valid kung ano man ang nararamdaman mo. Sa mga times na 'to, I know na mahirap talaga and heavy ang pakiramdam, pero kakayanin mo 'yan. I know that life can get really busy or overwhelming sometimes. Whenever things feel too heavy, please remember the pushcart. If the load is too much, it is completely okay to let the pushcart go for a moment. You can rest for a while, regain your strength, and then push it again when you are ready. You don't have to carry everything all at once.
+Just take things one step at a time. You have the strength to get through any challenges, so please keep going and stay positive.
+        </p><br>
+        <p>
+          Kaya mo 'yan, keep going! Take it one day at a time, okay? 🌸✨
+        </p>
+        <div class="quote-box">
+          "You don't have to see the whole staircase, just take the first step. You are stronger than you think, and brighter days are coming." 💙
+        </div>
+      </div>
+
+      <button class="action-btn" id="nextBtn">Next Message ➡️</button>
+    </div>
+  </div>
+
+  <!-- Pop-up Modal 2: Second Long Message -->
+  <div class="popup-overlay" id="modal2">
+    <div class="popup-card">
+      <div class="popup-header">
+        <svg class="lily-svg"><use href="#lily-icon"/></svg>
+        <svg class="lily-svg"><use href="#lily-icon"/></svg>
+      </div>
+      <div class="popup-title">Second Message: A Comfort Song For You 🎵</div>
+      
+      <div class="popup-body">
+        <p>Before you go...</p><br>
+        <p>
+          Music has a special way of expressing feelings that words sometimes cannot fully catch. There is a song that perfectly matches this calm and comforting mood.
+        </p><br>
+        <p>
+          Click the button below to listen to <strong>this song:)) promise icocomfort ka nito. </strong>  Let the melody of this song surround you with warmth and comfort! 🎧✨
+        </p>
+      </div>
+
+      <button class="action-btn" id="spotifyBtn">papakinggan ko😊 🎶</button>
+    </div>
+  </div>
+
+  <script>
+    // Message Typing Animation
+    const message = "open mo :))";
+    let index = 0;
+    const typingElement = document.getElementById("typingText");
+
+    function typeWriter() {
+      if (index < message.length) {
+        typingElement.innerHTML += message.charAt(index);
+        index++;
+        setTimeout(typeWriter, 80);
+      }
+    }
+
+    // Attach Event Listeners on DOM load
+    document.addEventListener("DOMContentLoaded", function() {
+      typeWriter();
+
+      const startBtn = document.getElementById("startBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const spotifyBtn = document.getElementById("spotifyBtn");
+      const modal1 = document.getElementById("modal1");
+      const modal2 = document.getElementById("modal2");
+
+      if (startBtn) {
+        startBtn.addEventListener("click", function() {
+          modal1.classList.add("active");
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function() {
+          modal1.classList.remove("active");
+          setTimeout(() => {
+            modal2.classList.add("active");
+          }, 300);
+        });
+      }
+
+      if (spotifyBtn) {
+        spotifyBtn.addEventListener("click", function() {
+          window.open("https://open.spotify.com/track/0BewsYUbEIKdJmdap9oI7V?si=DESM_TfIQkGquKJYu5I4bA&utm_source=copy-link", "_blank");
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
