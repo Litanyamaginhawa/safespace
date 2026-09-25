@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitanyaSafespace</title>
+<style>
+  :root{
+    --blush:#f7d9e3; --lav:#e2d8f3; --cream:#fdf6ee; --sage:#d8e7dc;
+    --ink:#4a3f52; --soft:#8b7f95;
+    --shadow:0 12px 40px rgba(120,100,140,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",-apple-system,"Helvetica Neue",sans-serif;
+    color:var(--ink); line-height:1.7; min-height:100vh;
+    background:
+      radial-gradient(1100px 600px at 12% -5%, var(--blush) 0%, transparent 60%),
+      radial-gradient(900px 700px at 92% 8%, var(--lav) 0%, transparent 58%),
+      radial-gradient(1000px 800px at 50% 110%, var(--sage) 0%, transparent 62%),
+      var(--cream);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 20px 80px}
+
+  /* ---------- LOADING FLASH ---------- */
+  #flash{
+    position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(150deg,#fdf6ee,#f7d9e3 45%,#e2d8f3);
+    transition:opacity .8s ease;
+  }
+  #flash.gone{opacity:0;pointer-events:none}
+  #flash p{
+    font-family:Georgia,serif;font-style:italic;font-size:clamp(1.2rem,4.5vw,2.1rem);
+    color:#6b5c78;text-align:center;max-width:640px;padding:0 26px;
+    animation:pop .55s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+
+  /* ---------- HEADER ---------- */
+  header{text-align:center;padding:44px 20px 30px}
+  header h1{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:clamp(2.1rem,6vw,3.6rem); font-weight:400; letter-spacing:.5px;
+    background:linear-gradient(100deg,#c98aa8,#9b86c4,#7fa896);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header p{color:var(--soft);margin-top:12px;font-size:1.05rem;font-style:italic}
+  .rule{width:70px;height:2px;margin:22px auto 0;background:linear-gradient(90deg,transparent,#c9aecd,transparent)}
+
+  /* ---------- CARDS ---------- */
+  .card{
+    background:rgba(255,253,251,.72); backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.85); border-radius:24px;
+    padding:32px; box-shadow:var(--shadow); margin-bottom:30px;
+  }
+  .card h2{font-family:Georgia,serif;font-weight:400;font-size:1.5rem;margin-bottom:6px}
+  .card .sub{color:var(--soft);font-size:.93rem;margin-bottom:22px}
+
+  #daily{
+    text-align:center;font-family:Georgia,serif;font-size:1.35rem;
+    font-style:italic;color:#6b5c78;min-height:2.2em;
+  }
+
+  /* ---------- FILTERS / LITANY ---------- */
+  .filter-bar{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:26px}
+  .chip{
+    border:1px solid #e0d3e6;background:rgba(255,255,255,.7);color:var(--soft);
+    padding:7px 16px;border-radius:999px;font-size:.86rem;cursor:pointer;
+    transition:.25s;font-family:inherit;
+  }
+  .chip:hover{border-color:#c9aecd;color:var(--ink)}
+  .chip.on{background:linear-gradient(120deg,#c98aa8,#9b86c4);color:#fff;border-color:transparent}
+
+  .grid{columns:2;column-gap:18px;max-height:640px;overflow-y:auto;padding-right:6px}
+  @media(max-width:720px){.grid{columns:1}}
+  .quote{
+    break-inside:avoid;background:rgba(255,255,255,.78);
+    border-radius:16px;padding:20px 22px;margin-bottom:18px;
+    border-left:3px solid #e3c7d6;box-shadow:0 4px 16px rgba(140,120,160,.07);
+    font-family:Georgia,serif;font-size:1rem;color:#5b5066;transition:.3s;
+  }
+  .quote:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(140,120,160,.14)}
+  .quote .tag{
+    display:block;margin-top:12px;font-size:.72rem;letter-spacing:1.4px;
+    text-transform:uppercase;color:#b09ab8;font-family:inherit;
+  }
+
+  /* ---------- TYPING BAR ---------- */
+  .input-row{display:flex;gap:10px;flex-wrap:wrap}
+  #thought{
+    flex:1;min-width:220px;padding:16px 20px;border-radius:16px;
+    border:1px solid #e3d6e8;background:rgba(255,255,255,.9);
+    font-family:inherit;font-size:1rem;color:var(--ink);resize:vertical;
+    min-height:60px;outline:none;transition:.25s;
+  }
+  #thought:focus{border-color:#c9aecd;box-shadow:0 0 0 4px rgba(201,174,205,.18)}
+  #generate{
+    padding:16px 30px;border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(120deg,#c98aa8,#9b86c4);color:#fff;
+    font-family:inherit;font-size:.98rem;font-weight:600;letter-spacing:.4px;
+    transition:.25s;box-shadow:0 8px 22px rgba(155,134,196,.3);
+  }
+  #generate:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(155,134,196,.4)}
+  #generate:active{transform:translateY(0)}
+  .hint{font-size:.82rem;color:#ad9fb5;margin-top:12px}
+
+  #reply{
+    margin-top:22px;padding:0 24px;max-height:0;overflow:hidden;
+    border-radius:18px;
+    background:linear-gradient(120deg,rgba(247,217,227,.6),rgba(226,216,243,.6));
+    transition:max-height .6s ease,padding .6s ease;
+    font-family:Georgia,serif;font-size:1.12rem;font-style:italic;color:#5b5066;
+  }
+  #reply.show{max-height:1400px;padding:26px 24px}
+  #reply .label{
+    font-family:inherit;font-style:normal;font-size:.72rem;letter-spacing:1.6px;
+    text-transform:uppercase;color:#b09ab8;display:block;margin-bottom:10px;font-weight:700;
+  }
+  #reply .block{margin-bottom:22px}
+  #reply .block:last-child{margin-bottom:0}
+  #reply .more{
+    display:inline-block;margin-top:16px;padding:9px 20px;border:none;cursor:pointer;
+    border-radius:12px;background:rgba(255,255,255,.85);color:#7b6a86;
+    font-family:inherit;font-style:normal;font-size:.85rem;transition:.25s;
+  }
+  #reply .more:hover{background:#fff;box-shadow:0 6px 18px rgba(140,120,160,.16)}
+
+  /* ---------- SPOTIFY ---------- */
+  .song{
+    display:flex;align-items:center;gap:14px;margin-top:10px;padding:14px 16px;
+    border-radius:14px;background:rgba(255,255,255,.8);border-left:5px solid #1db954;
+    font-style:normal;font-family:inherit;
+  }
+  .song .ic{
+    width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:#1db954;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;
+  }
+  .song .meta{flex:1;min-width:0}
+  .song .ttl{font-weight:600;color:#3f3548;font-size:.97rem}
+  .song .art{font-size:.82rem;color:#9d8fa6}
+  .song a{
+    padding:9px 16px;border-radius:10px;background:#1db954;color:#fff;
+    text-decoration:none;font-size:.82rem;font-weight:600;white-space:nowrap;transition:.2s;
+  }
+  .song a:hover{background:#17a349}
+
+  /* ---------- WALL ---------- */
+  .wall-form{display:flex;gap:10px;margin-bottom:26px}
+  #note{
+    flex:1;padding:14px 18px;border-radius:14px;border:1px solid #e3d6e8;
+    background:rgba(255,255,255,.9);font-family:inherit;font-size:.97rem;outline:none;
+  }
+  #note:focus{border-color:#c9aecd;box-shadow:0 0 0 4px rgba(201,174,205,.18)}
+  #post{
+    padding:14px 26px;border:none;border-radius:14px;cursor:pointer;
+    background:#7fa896;color:#fff;font-family:inherit;font-weight:600;transition:.25s;
+  }
+  #post:hover{background:#6d9584;transform:translateY(-2px)}
+
+  .wall{columns:3;column-gap:16px}
+  @media(max-width:860px){.wall{columns:2}}
+  @media(max-width:560px){.wall{columns:1}}
+  .sticky{
+    break-inside:avoid;border-radius:16px;padding:18px 20px;margin-bottom:16px;
+    font-size:.95rem;color:#52475c;box-shadow:0 6px 18px rgba(140,120,160,.1);
+    transition:.3s;position:relative;
+  }
+  .sticky:hover{transform:rotate(-1deg) translateY(-3px)}
+  .sticky.new{animation:drop .6s ease}
+  @keyframes drop{from{opacity:0;transform:translateY(-16px) scale(.94)}to{opacity:1;transform:none}}
+  .sticky .who{display:block;margin-top:10px;font-size:.74rem;color:#9d8fa6;letter-spacing:.6px}
+  .sticky .del{
+    position:absolute;top:8px;right:12px;border:none;background:none;
+    color:#c3b4cb;cursor:pointer;font-size:1rem;opacity:0;transition:.2s;
+  }
+  .sticky:hover .del{opacity:1}
+  .sticky .del:hover{color:#c98aa8}
+
+  footer{text-align:center;color:#b3a6bb;font-size:.85rem;padding:20px;font-style:italic}
+
+  /* ---------- POPUP ---------- */
+  #popup{
+    position:fixed;top:24px;right:24px;z-index:99;max-width:340px;
+    background:rgba(255,253,251,.96);backdrop-filter:blur(10px);
+    border:1px solid #f0e2ea;border-left:4px solid #c98aa8;border-radius:18px;
+    padding:20px 22px;box-shadow:0 18px 50px rgba(120,100,140,.24);
+    transform:translateX(130%);opacity:0;transition:.55s cubic-bezier(.2,.8,.3,1);
+  }
+  #popup.show{transform:translateX(0);opacity:1}
+  #popup .pt{font-size:.72rem;letter-spacing:1.6px;text-transform:uppercase;color:#c98aa8;font-weight:700}
+  #popup .pm{font-family:Georgia,serif;font-style:italic;font-size:1.02rem;color:#5b5066;margin-top:9px}
+  #popup .close{position:absolute;top:8px;right:12px;border:none;background:none;color:#c3b4cb;font-size:1.1rem;cursor:pointer}
+  @media(max-width:520px){
+    #popup{right:14px;left:14px;max-width:none;top:14px}
+    .card{padding:24px 20px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING FLASH -->
+<div id="flash"><p id="flashText"></p></div>
+
+<div class="wrap">
+  <header>
+    <h1>LitanyaSafespace</h1>
+    <p>A quiet corner of the internet — for the words you needed to hear.</p>
+    <div class="rule"></div>
+  </header>
+
+  <div class="card" style="text-align:center">
+    <div class="sub">For today</div>
+    <div id="daily"></div>
+  </div>
+
+  <div class="card">
+    <h2>Litany Library</h2>
+    <div class="sub">Filter by what you need right now.</div>
+    <div class="filter-bar" id="filters"></div>
+    <div class="grid" id="litany"></div>
+  </div>
+
+  <div class="card">
+    <h2>Write What You Feel</h2>
+    <div class="sub">Name the feeling, or just type what's heavy. Nothing here is judged — and whatever you write gets pinned to the Freedom Wall below.</div>
+    <div class="input-row">
+      <textarea id="thought" placeholder="e.g. I'm exhausted. I don't know if I can keep going."></textarea>
+      <button id="generate">Give Me Words</button>
+    </div>
+    <div class="hint">Your words are read for feeling, then answered with a realization and a song. Ctrl + Enter to submit.</div>
+    <div id="reply"></div>
+  </div>
+
+  <div class="card">
+    <h2>Freedom Wall</h2>
+    <div class="sub">Leave anything — a reminder, a prayer, a promise to yourself, or a simple "you've got this."</div>
+    <div class="wall-form">
+      <input id="note" maxlength="180" placeholder="Write anything...">
+      <button id="post">Pin It</button>
+    </div>
+    <div class="wall" id="wall"></div>
+  </div>
+
+  <footer>Take care of yourself. You are the first voice you need to listen to.</footer>
+</div>
+
+<div id="popup">
+  <button class="close" onclick="document.getElementById('popup').classList.remove('show')">✕</button>
+  <div class="pt" id="popupTitle">Reminder</div>
+  <div class="pm" id="popupMsg"></div>
+</div>
+
+<script>
+/* ============================================================
+   1. BASE DATA
+   ============================================================ */
+const LITANY = [
+  {c:"Reflection", t:"You are not lost. You are simply walking a road no one has mapped for you yet."},
+  {c:"Reflection", t:"Exhaustion is not proof of weakness — it is proof you have been carrying something heavy."},
+  {c:"Reflection", t:"Sometimes stopping isn't surrender. It's just another way of continuing."},
+  {c:"Reflection", t:"You don't have to understand everything today. Some things are explained by time, not by thought."},
+  {c:"Reflection", t:"Anger is hot, but it doesn't burn the other person. Only you sit in the fire."},
+
+  {c:"Realization", t:"You were the person you were waiting for. No one else was coming to rescue you."},
+  {c:"Realization", t:"Not everything you lost was your mistake. Some things were simply removed because they were never yours."},
+  {c:"Realization", t:"Forgiveness isn't a gift to the person who hurt you. It's a gift to your own peace."},
+  {c:"Realization", t:"You don't owe an explanation to people who were never trying to understand you."},
+  {c:"Realization", t:"Your fear is not a warning. It's just the edge of what you know."},
+
+  {c:"Affirmation", t:"You are enough. You don't have to become more to deserve love."},
+  {c:"Affirmation", t:"Someone else's pace is not the measure of your worth."},
+  {c:"Affirmation", t:"You survived days you swore you couldn't. That wasn't luck. That was you."},
+  {c:"Affirmation", t:"You don't have to be okay to be worthy."},
+  {c:"Affirmation", t:"You are not too much. You are full — and full things deserve rest."},
+
+  {c:"Wisdom", t:"Some prayers aren't answered with a change in circumstance, but with strength to carry it."},
+  {c:"Wisdom", t:"When you can't change the wind, change the sail."},
+  {c:"Wisdom", t:"A scar isn't a mark of shame. It's proof something grew back."},
+  {c:"Wisdom", t:"Not every season is a harvest season. Some are for planting, and those are quiet."},
+  {c:"Wisdom", t:"You don't need to see the whole staircase. Just the next step."},
+
+  {c:"Self", t:"Put yourself first. That isn't selfish — it's maintenance on the only home you can never leave."},
+  {c:"Self", t:"Asking for help isn't weakness. Admitting you need it is courage."},
+  {c:"Self", t:"Give yourself the same kindness you hand out to everyone else."},
+  {c:"Self", t:"Rest is not a reward you earn. It's a requirement you owe."},
+
+  {c:"Faith", t:"You were not abandoned. You were simply guided onto a road you didn't recognize."},
+  {c:"Faith", t:"Plans don't always hold. Hope is never wasted."},
+  {c:"Faith", t:"You don't have to know the whole way. The next step is enough."},
+  {c:"Faith", t:"Even in the quietest night, someone is still listening."},
+];
+
+/* ============================================================
+   2. THE REALIZATION ENGINE — combinatorial, 1000+ unique lines
+   ============================================================ */
+const SUBJECTS = [
+  "The tiredness you feel","The loneliness you carry","The way you keep going anyway",
+  "The grief you haven't named","The fear sitting in your chest","The anger you keep swallowing",
+  "The love you gave freely","The version of you that survived","The hope you're afraid to admit",
+  "The patience you're running out of","The wound you keep touching","The dream you shelved",
+  "The comparison you keep making","The apology you never got","The apology you owe yourself",
+  "The pressure you put on yourself","The silence you've been keeping","The rest you keep postponing",
+  "The person you were last year","The person you're becoming","The boundary you need to draw",
+  "The goodbye you're still holding","The truth you already know","The question you keep avoiding",
+  "The small kindness you ignored","The standard you hold yourself to","The story you tell about yourself",
+  "The pain that taught you something","The season you're stuck in","The change you're scared to make",
+  "The people-pleasing you inherited","The noise you need to mute","The tenderness you hide",
+  "The mistake you keep replaying","The body you live in","The voice in your head","The future you can't picture"
+];
+
+const VERBS = [
+  "is not a flaw to fix",
+  "is not proof that you're failing",
+  "is not something you have to justify",
+  "is not yours to carry alone",
+  "is not a permanent address",
+  "is not a verdict on your worth",
+  "is not weakness wearing a costume",
+  "is not a debt you owe anyone",
+  "is not the whole story",
+  "is not evidence against you",
+  "is not something to be ashamed of",
+  "is not the end of the road"
+];
+
+const CLAUSES = [
+  "It's a signal, and signals can be read.",
+  "It's information, and information can be used.",
+  "It's weather, and weather moves.",
+  "It's a chapter, and chapters end.",
+  "It's a bruise, and bruises fade.",
+  "It's a room, and rooms have doors.",
+  "It's a season, and seasons turn.",
+  "It's a guest, and guests leave.",
+  "It's a weight, and weights can be set down.",
+  "It's a muscle, and muscles can be trained.",
+  "It's a language you're still learning.",
+  "It's a map, not a sentence.",
+];
+
+function buildRealizations(){
+  const out = [];
+  for(const s of SUBJECTS){
+    for(const v of VERBS){
+      for(const c of CLAUSES){
+        if(out.length < 1400) out.push(s + " " + v + ". " + c);
+      }
+      for(const c of CLAUSES.slice(0,3)){
+        if(out.length < 1400) out.push(s + " " + v + " — " + c.toLowerCase());
+      }
+    }
+  }
+  // deterministic shuffle so it's stable per load but feels scattered
+  for(let i = out.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+const REALIZATIONS = buildRealizations(); // ~1400 entries
+
+/* ============================================================
+   3. MOOD ENGINE — keyword groups + OPM songs
+   ============================================================ */
+const MOODS = [
+  { id:"tired", keys:["tired","exhausted","drained","burnout","burned out","pagod","no energy","can't anymore","cant anymore","give up","hopeless","empty"],
+    songs:[
+      {t:"Leaves", a:"Ben&Ben", u:"[open.spotify.com](https://open.spotify.com/search/Leaves%20Ben%20and%20Ben)"},
+      {t:"Pahinga", a:"December Avenue", u:"[open.spotify.com](https://open.spotify.com/search/Pahinga%20December%20Avenue)"},
+      {t:"Kahit Ayaw Mo Na", a:"This Band", u:"[open.spotify.com](https://open.spotify.com/search/Kahit%20Ayaw%20Mo%20Na%20This%20Band)"}
+    ]},
+  { id:"sad", keys:["sad","lonely","alone","crying","cry","tears","heartbroken","heartbreak","lungkot","malungkot","nag-iisa","depressed","hurting","broken"],
+    songs:[
+      {t:"Kung Ayaw Mo Na Sa Akin", a:"Sugarfree", u:"[open.spotify.com](https://open.spotify.com/search/Kung%20Ayaw%20Mo%20Na%20Sa%20Akin%20Sugarfree)"},
+      {t:"Dating Tayo", a:"TJ Monterde", u:"[open.spotify.com](https://open.spotify.com/search/Dating%20Tayo%20TJ%20Monterde)"},
+      {t:"Sana", a:"Up Dharma Down", u:"[open.spotify.com](https://open.spotify.com/search/Sana%20Up%20Dharma%20Down)"}
+    ]},
+  { id:"anxious", keys:["anxious","anxiety","scared","afraid","fear","worried","worry","panic","overwhelmed","kaba","takot","nervous","stressed","stress"],
+    songs:[
+      {t:"Tadhana", a:"Up Dharma Down", u:"[open.spotify.com](https://open.spotify.com/search/Tadhana%20Up%20Dharma%20Down)"},
+      {t:"Breathe", a:"IV of Spades", u:"[open.spotify.com](https://open.spotify.com/search/Breathe%20IV%20of%20Spades)"},
+      {t:"Umaasa", a:"Calein", u:"[open.spotify.com](https://open.spotify.com/search/Umaasa%20Calein)"}
+    ]},
+  { id:"love", keys:["love","in love","crush","missing you","miss you","kilig","nagmamahal","longing","miss","romantic"],
+    songs:[
+      {t:"Pasilyo", a:"SunKissed Lola", u:"[open.spotify.com](https://open.spotify.com/search/Pasilyo%20SunKissed%20Lola)"},
+      {t:"Dilaw", a:"Maki", u:"[open.spotify.com](https://open.spotify.com/search/Dilaw%20Maki)"},
+      {t:"Ikaw At Ako", a:"TJ Monterde", u:"[open.spotify.com](https://open.spotify.com/search/Ikaw%20At%20Ako%20TJ%20Monterde)"}
+    ]},
+  { id:"moving on", keys:["breakup","ex","left me","iniwan","sawi","moving on","move on","forget him","forget her","let go","nagbreak","broke up"],
+    songs:[
+      {t:"Buwan", a:"Juan Karlos", u:"[open.spotify.com](https://open.spotify.com/search/Buwan%20Juan%20Karlos)"},
+      {t:"Huling Sandali", a:"December Avenue", u:"[open.spotify.com](https://open.spotify.com/search/Huling%20Sandali%20December%20Avenue)"},
+      {t:"Kathang Isip", a:"Ben&Ben", u:"[open.spotify.com](https://open.spotify.com/search/Kathang%20Isip%20Ben%20and%20Ben)"}
+    ]},
+  { id:"hope", keys:["hope","hopeful","dream","someday","future","tomorrow","pangarap","trying again","starting over","begin again","believe"],
+    songs:[
+      {t:"Nadarang", a:"SB19", u:"[open.spotify.com](https://open.spotify.com/search/Nadarang%20SB19)"},
+      {t:"Roses", a:"Ben&Ben", u:"[open.spotify.com](https://open.spotify.com/search/Roses%20Ben%20and%20Ben)"},
+      {t:"Isang Araw", a:"Reese Lansangan", u:"[open.spotify.com](https://open.spotify.com/search/Isang%20Araw%20Reese%20Lansangan)"}
+    ]},
+  { id:"self-worth", keys:["not enough","worthless","useless","failure","hate myself","insecure","ugly","stupid","loser","hindi ako magaling","walang kwenta","not good enough"],
+    songs:[
+      {t:"Bawat Kaluluwa", a:"IV of Spades", u:"[open.spotify.com](https://open.spotify.com/search/Bawat%20Kaluluwa%20IV%20of%20Spades)"},
+      {t:"Hindi Na Nga", a:"Zild", u:"[open.spotify.com](https://open.spotify.com/search/Hindi%20Na%20Nga%20Zild)"},
+      {t:"Dulo", a:"Ben&Ben", u:"[open.spotify.com](https://open.spotify.com/search/Dulo%20Ben%20and%20Ben)"}
+    ]},
+  { id:"grateful", keys:["grateful","thankful","blessed","happy","okay now","better now","salamat","pasasalamat","masaya","thank you"],
+    songs:[
+      {t:"Salamat", a:"Yeng Constantino", u:"[open.spotify.com](https://open.spotify.com/search/Salamat%20Yeng%20Constantino)"},
+      {t:"Maligaya", a:"Keiko Necesario", u:"[open.spotify.com](https://open.spotify.com/search/Maligaya%20Keiko%20Necesario)"},
+      {t:"Panalangin", a:"Apo Hiking Society", u:"[open.spotify.com](https://open.spotify.com/search/Panalangin%20Apo%20Hiking%20Society)"}
+    ]},
+  { id:"angry", keys:["angry","mad","furious","hate","galit","resentment","unfair","betrayed","trust issues"],
+    songs:[
+      {t:"Sirena", a:"Gloc-9", u:"[open.spotify.com](https://open.spotify.com/search/Sirena%20Gloc-9)"},
+      {t:"Bagsakan", a:"Francis M.", u:"[open.spotify.com](https://open.spotify.com/search/Bagsakan%20Francis%20M)"},
+      {t:"Simpleng Tao", a:"Gloc-9", u:"[open.spotify.com](https://open.spotify.com/search/Simpleng%20Tao%20Gloc-9)"}
+    ]},
+  { id:"lost", keys:["lost","confused","don't know","dont know","no direction","purpose","meaningless","stuck","hindi ko alam"],
+    songs:[
+      {t:"Mundo", a:"IV of Spades", u:"[open.spotify.com](https://open.spotify.com/search/Mundo%20IV%20of%20Spades)"},
+      {t:"Panaginip", a:"Zild", u:"[open.spotify.com](https://open.spotify.com/search/Panaginip%20Zild)"},
+      {t:"Di Na Muli", a:"Itchyworms", u:"[open.spotify.com](https://open.spotify.com/search/Di%20Na%20Muli%20Itchyworms)"}
+    ]},
+  { id:"overthinking", keys:["overthinking","can't sleep","insomnia","thinking too much","restless","puyat","mind racing"],
+    songs:[
+      {t:"Saranggola", a:"Zild", u:"[open.spotify.com](https://open.spotify.com/search/Saranggola%20Zild)"},
+      {t:"Antukin", a:"Rico Blanco", u:"[open.spotify.com](https://open.spotify.com/search/Antukin%20Rico%20Blanco)"},
+      {t:"Gabi", a:"December Avenue", u:"[open.spotify.com](https://open.spotify.com/search/Gabi%20December%20Avenue)"}
+    ]},
+  { id:"strength", keys:["strong","fighting","keep going","trying","survive","surviving","labak","laban","kaya ko","hardworking"],
+    songs:[
+      {t:"Tuloy Pa Rin", a:"Neocolours", u:"[open.spotify.com](https://open.spotify.com/search/Tuloy%20Pa%20Rin%20Neocolours)"},
+      {t:"Hanggang Sa Dulo", a:"Cueshe", u:"[open.spotify.com](https://open.spotify.com/search/Hanggang%20Sa%20Dulo%20Cueshe)"},
+      {t:"Alab", a:"SB19", u:"[open.spotify.com](https://open.spotify.com/search/Alab%20SB19)"}
+    ]},
+];
+
+const FALLBACK_SONGS = [
+  {t:"Tagpuan", a:"Moira Dela Torre", u:"[open.spotify.com](https://open.spotify.com/search/Tagpuan%20Moira%20Dela%20Torre)"},
+  {t:"Hanggang Dito Na Lang", a:"Jaya", u:"[open.spotify.com](https://open.spotify.com/search/Hanggang%20Dito%20Na%20Lang%20Jaya)"},
+  {t:"Buwan", a:"Juan Karlos", u:"[open.spotify.com](https://open.spotify.com/search/Buwan%20Juan%20Karlos)"},
+  {t:"Nadarang", a:"SB19", u:"[open.spotify.com](https://open.spotify.com/search/Nadarang%20SB19)"},
+];
+
+const NUDGES = [
+  "How are you, really? Take one second and listen to yourself.",
+  "Breathe. One, two, three. You're still here.",
+  "When did you last do something just because it made you happy?",
+  "You are not alone in tonight.",
+  "Do one small kind thing for yourself right now.",
+  "Stopping isn't surrender. You're just resting.",
+  "You're still whole. Even tired, still whole.",
+  "The feeling will move. Feelings always move.",
+];
+
+const FLASH_LINES = [
+  "You are allowed to rest.",
+  "This space doesn't judge you.",
+  "Feelings move. You're already moving.",
+  "You've survived every hard day so far.",
+  "Something good is still ahead of you.",
+  "You don't have to be okay to be worthy.",
+  "Take your time. Nothing here is rushing you.",
+  "Naming how you feel is already courage.",
+  "You are the first voice you need to listen to.",
+  "Breathe. You're here, and that counts.",
+];
+
+/* ============================================================
+   4. LOADING FLASH
+   ============================================================ */
+(function flashLoad(){
+  const flash = document.getElementById('flash');
+  const txt = document.getElementById('flashText');
+  document.body.style.overflow = 'hidden';
+  let i = 0;
+  const total = 5;
+  const seen = [];
+  const tick = () => {
+    let line;
+    do { line = FLASH_LINES[Math.floor(Math.random()*FLASH_LINES.length)]; }
+    while(seen.includes(line) && seen.length < FLASH_LINES.length);
+    seen.push(line);
+    txt.textContent = line;
+    txt.style.animation = 'none';
+    void txt.offsetWidth;
+    txt.style.animation = 'pop .55s ease';
+    i++;
+    if(i < total) setTimeout(tick, 620);
+    else {
+      setTimeout(()=>{
+        flash.classList.add('gone');
+        document.body.style.overflow = '';
+        setTimeout(()=>flash.remove(), 900);
+      }, 950);
+    }
+  };
+  tick();
+})();
+
+/* ============================================================
+   5. LITANY LIBRARY
+   ============================================================ */
+const litanyEl = document.getElementById('litany');
+const filtersEl = document.getElementById('filters');
+const cats = ["All", ...new Set(LITANY.map(l=>l.c))];
+
+function renderLitany(cat){
+  litanyEl.innerHTML = LITANY
+    .filter(l => cat === "All" || l.c === cat)
+    .map(l => `<div class="quote">${l.t}<span class="tag">${l.c}</span></div>`)
+    .join('');
+}
+filtersEl.innerHTML = cats.map((c,i)=>`<button class="chip ${i===0?'on':''}" data-cat="${c}">${c}</button>`).join('');
+filtersEl.addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  filtersEl.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  renderLitany(b.dataset.cat);
+});
+renderLitany("All");
+
+/* ============================================================
+   6. DAILY LINE
+   ============================================================ */
+(function daily(){
+  const day = Math.floor(Date.now()/86400000);
+  document.getElementById('daily').textContent = "“" + LITANY[day % LITANY.length].t + "”";
+})();
+
+/* ============================================================
+   7. POPUP
+   ============================================================ */
+const popup = document.getElementById('popup');
+const popupTitle = document.getElementById('popupTitle');
+const popupMsg = document.getElementById('popupMsg');
+let popupTimer;
+
+function showPopup(msg, title = "Reminder"){
+  popupTitle.textContent = title;
+  popupMsg.textContent = msg;
+  popup.classList.add('show');
+  clearTimeout(popupTimer);
+  popupTimer = setTimeout(()=>popup.classList.remove('show'), 8500);
+}
+
+setTimeout(()=>{
+  showPopup("Thanks for coming in. This space is yours — nothing here is judged.", "Welcome");
+}, 4600);
+
+let nudgeIdx = 0;
+setInterval(()=>{
+  if(Math.random() < .5){
+    showPopup(NUDGES[nudgeIdx % NUDGES.length], "A Small Moment");
+    nudgeIdx++;
+  }
+}, 50000);
+
+/* ============================================================
+   8. FREEDOM WALL  (declared before the generator uses it)
+   ============================================================ */
+const wallEl = document.getElementById('wall');
+const noteEl = document.getElementById('note');
+const COLORS = [
+  "linear-gradient(135deg,#fdeef4,#f7d9e3)",
+  "linear-gradient(135deg,#f2edfb,#e2d8f3)",
+  "linear-gradient(135deg,#eef7f1,#d8e7dc)",
+  "linear-gradient(135deg,#fdf6ee,#f4e7d3)",
+  "linear-gradient(135deg,#eef4fb,#dbe6f5)"
+];
+const NAMES = ["A visitor","Someone anonymous","A friend","Someone passing through","No name","Someone like you"];
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function loadWall(){
+  try{ return JSON.parse(localStorage.getItem('ls_wall_v2') || '[]'); }catch(e){ return []; }
+}
+function saveWall(notes){
+  try{ localStorage.setItem('ls_wall_v2', JSON.stringify(notes)); }catch(e){}
+}
+function renderWall(notes, newId){
+  wallEl.innerHTML = notes.map(n => `
+    <div class="sticky ${n.id === newId ? 'new' : ''}" style="background:${n.color}">
+      <button class="del" data-id="${n.id}" title="Remove">✕</button>
+      ${escapeHtml(n.text)}
+      <span class="who">— ${escapeHtml(n.who)}</span>
+    </div>`).join('');
+}
+
+let wall = loadWall();
+if(wall.length === 0){
+  wall = [
+    {id:1, text:"If you're reading this — you've got this. You're not alone.", who:"A visitor", color:COLORS[0]},
+    {id:2, text:"I'm grateful for the day I chose to keep going.", who:"A friend", color:COLORS[2]},
+    {id:3, text:"Crying isn't shameful. You're human, and you're alive.", who:"Someone anonymous", color:COLORS[1]},
+  ];
+  saveWall(wall);
+}
+renderWall(wall);
+
+function addNote(text, source){
+  if(!text || !text.trim()) return null;
+  const entry = {
+    id: Date.now() + Math.floor(Math.random()*999),
+    text: text.trim().slice(0,180),
+    who: source === 'feeling' ? "Someone who felt this too" : NAMES[Math.floor(Math.random()*NAMES.length)],
+    color: COLORS[Math.floor(Math.random()*COLORS.length)]
+  };
+  wall.unshift(entry);
+  saveWall(wall);
+  renderWall(wall, entry.id);
+  return entry;
+}
+
+document.getElementById('post').addEventListener('click', ()=>{
+  const entry = addNote(noteEl.value, 'wall');
+  if(!entry) return;
+  noteEl.value = "";
+  showPopup("Your words are on the wall now. Thank you for sharing them.", "Pinned");
+});
+noteEl.addEventListener('keydown', e=>{
+  if(e.key === 'Enter') document.getElementById('post').click();
+});
+wallEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.del'); if(!btn) return;
+  wall = wall.filter(n => String(n.id) !== btn.dataset.el);
+});
+wallEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.del'); if(!btn) return;
+  wall = wall.filter(n => String(n.id) !== btn.dataset.id);
+  saveWall(wall);
+  renderWall(wall);
+});
+
+/* ============================================================
+   9. TYPING BAR — realization + song + auto-pin
+   ============================================================ */
+const thoughtEl = document.getElementById('thought');
+const replyEl = document.getElementById('reply');
+let currentMood = null;
+let currentRealizations = [];
+
+function detectMood(text){
+  const t = text.toLowerCase();
+  let best = null, score = 0;
+  MOODS.forEach(m=>{
+    const s = m.keys.filter(k => t.includes(k)).length;
+    if(s > score){ score = s; best = m; }
+  });
+  return best;
+}
+
+function pickRealizations(n){
+  const out = [];
+  const pool = REALIZATIONS.slice();
+  for(let i = 0; i < n && pool.length; i++){
+    out.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+  }
+  return out;
+}
+
+function songBlock(mood){
+  const song = mood
+    ? mood.songs[Math.floor(Math.random()*mood.songs.length)]
+    : FALLBACK_SONGS[Math.floor(Math.random()*FALLBACK_SONGS.length)];
+  return `
+    <div class="song">
+      <div class="ic">♪</div>
+      <div class="meta">
+        <div class="ttl">${escapeHtml(song.t)}</div>
+        <div class="art">${escapeHtml(song.a)} · OPM</div>
+      </div>
+      <a href="${song.u}" target="_blank" rel="noopener">Play on Spotify</a>
+    </div>`;
+}
+
+function renderReply(){
+  const moodLabel = currentMood ? currentMood.id : "what you're carrying";
+  replyEl.innerHTML = `
+    <div class="block">
+      <span class="label">What you're holding — ${escapeHtml(moodLabel)}</span>
+      ${currentRealizations.map(r => `<div>“${escapeHtml(r)}”</div>`).join('')}
+    </div>
+    <div class="block">
+      <span class="label">A song for this feeling</span>
+      ${songBlock(currentMood)}
+    </div>
+    <button class="more" id="moreBtn">Give me more realizations</button>
+  `;
+  document.getElementById('moreBtn').addEventListener('click', ()=>{
+    currentRealizations = currentRealizations.concat(pickRealizations(3));
+    renderReply();
+  });
+}
+
+function generate(){
+  const text = thoughtEl.value;
+  if(!text.trim()){
+    // nothing typed — still give something
+    currentMood = null;
+    currentRealizations = pickRealizations(3);
+  } else {
+    currentMood = detectMood(text);
+    currentRealizations = pickRealizations(3);
+    // auto-pin what they wrote to the Freedom Wall
+    addNote(text, 'feeling');
+  }
+
+  replyEl.classList.remove('show');
+  void replyEl.offsetWidth;
+  renderReply();
+  replyEl.classList.add('show');
+
+  showPopup(currentRealizations[0], "For you");
+  thoughtEl.value = "";
+}
+
+document.getElementById('generate').addEventListener('click', generate);
+thoughtEl.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
+});
+</script>
+</body>
+</html>
